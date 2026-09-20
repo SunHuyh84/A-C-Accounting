@@ -94,7 +94,8 @@ data class SyncConfig(
     val fcmRealtimeEnabled: Boolean = true,
     val fcmDeviceToken: String = "",
     val desktopChangeTopic: String = "ac_accounting_desktop_updates",
-    val notifyOnBackgroundUpdate: Boolean = true
+    val notifyOnBackgroundUpdate: Boolean = true,
+    val pairingPin: String = "389210"
 )
 
 data class PollingState(
@@ -128,6 +129,15 @@ data class DesktopPushEvent(
     val recordsCount: Int = 1,
     val summary: String = "Phát hiện chứng từ mới phát sinh trên Desktop",
     val timestamp: Long = System.currentTimeMillis()
+)
+
+data class QuickAccountingSummary(
+    val totalRevenue: Double,
+    val netProfit: Double,
+    val cashOnHand: Double,
+    val bankDeposit: Double,
+    val totalReceivable: Double,
+    val totalPayable: Double
 )
 
 data class DesktopStation(
@@ -175,14 +185,15 @@ data class FinancialSummary(
 )
 
 data class UserSession(
-    val username: String = "ketoantruong",
-    val fullName: String = "Nguyễn Văn Kế Toán",
-    val role: String = "Kế toán trưởng (Admin)",
-    val token: String = "AC_BEARER_JWT_SECURE_TOKEN",
+    val username: String = "",
+    val fullName: String = "",
+    val role: String = "Kế toán viên",
+    val token: String = "",
     val companyName: String = "A&C Accounting Enterprise",
     val targetMachineCode: String = "AC-DESKTOP-892A",
     val androidDeviceCode: String = "ANDR-MOB-7734",
-    val isLoggedIn: Boolean = true
+    val isLoggedIn: Boolean = false,
+    val isBiometricEnrolled: Boolean = false
 )
 
 data class PnlItem(

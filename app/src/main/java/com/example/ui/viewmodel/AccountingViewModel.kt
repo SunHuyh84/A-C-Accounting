@@ -128,6 +128,12 @@ class AccountingViewModel(application: Application) : AndroidViewModel(applicati
     private val _syncConfig = MutableStateFlow(SyncConfig())
     val syncConfig: StateFlow<SyncConfig> = _syncConfig.asStateFlow()
 
+    private val _savedAuthUsername = MutableStateFlow<String?>(null)
+    val savedAuthUsername: StateFlow<String?> = _savedAuthUsername.asStateFlow()
+
+    private val _hasSavedAccount = MutableStateFlow(false)
+    val hasSavedAccount: StateFlow<Boolean> = _hasSavedAccount.asStateFlow()
+
     private var pollingJob: Job? = null
 
     init {
@@ -146,6 +152,11 @@ class AccountingViewModel(application: Application) : AndroidViewModel(applicati
                     androidDeviceCode = config.androidDeviceCode
                 )
             }
+            val saved = repository.getSavedAuthCredentials()
+            if (saved != null && saved.first.isNotBlank()) {
+                _savedAuthUsername.value = saved.first
+                _hasSavedAccount.value = true
+            }
             if (config.pollingEnabled) {
                 startPollingLoop(config.pollingIntervalSeconds)
             }
@@ -154,20 +165,50 @@ class AccountingViewModel(application: Application) : AndroidViewModel(applicati
 
     fun login(username: String, pass: String) {
         viewModelScope.launch {
-            delay(400)
-            val config = _syncConfig.value
-            _userSession.update {
-                it.copy(
-                    username = username,
-                    isLoggedIn = true,
-                    fullName = if (username.contains("admin") || username == "ketoantruong") "Nguyễn Văn Kế Toán (Trưởng phòng)" else "Trần Thị Mai Lan (Kế toán viên)",
-                    targetMachineCode = config.targetDesktopMachineCode,
-                    androidDeviceCode = config.androidDeviceCode,
-                    token = "AC_SECURE_AUTH_TOKEN_${System.currentTimeMillis()}"
-                )
+            _uiState.update { it.copy(isLoading = true) }
+            val result = repository.authenticateUser(username, pass)
+            result.onSuccess { user ->
+                val config = _syncConfig.value
+                _userSession.update {
+                    it.copy(
+                        username = user.username,
+                        isLoggedIn = true,
+                        fullName = user.fullName,
+                        role = user.role,
+                        targetMachineCode = config.targetDesktopMachineCode,
+                        androidDeviceCode = config.androidDeviceCode,
+                        token = "AC_SECURE_AUTH_TOKEN_${System.currentTimeMillis()}"
+                    )
+                }
+                _savedAuthUsername.value = user.username
+                _hasSavedAccount.value = true
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        snackbarMessage = "Đăng nhập thành công! Vai trò: ${user.role} · Máy trạm: ${config.targetDesktopMachineCode}"
+                    )
+                }
+            }.onFailure { err ->
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        snackbarMessage = err.message ?: "Đăng nhập thất bại"
+                    )
+                }
             }
-            repository.updateAccountantActivity(username, "Đăng nhập từ ứng dụng Android")
-            _uiState.update { it.copy(snackbarMessage = "Đăng nhập thành công! Kết nối máy trạm: ${config.targetDesktopMachineCode}") }
+        }
+    }
+
+    fun loginWithBiometrics() {
+        viewModelScope.launch {
+            val saved = repository.getSavedAuthCredentials()
+            if (saved == null || saved.first.isBlank()) {
+                _uiState.update {
+                    it.copy(snackbarMessage = "Chưa có tài khoản nào được lưu trên thiết bị. Vui lòng tạo tài khoản kèm mã PIN ghép nối lần đầu.")
+                }
+                return@launch
+            }
+            login(saved.first, "biometric_auth")
         }
     }
 
@@ -215,26 +256,50 @@ class AccountingViewModel(application: Application) : AndroidViewModel(applicati
     // Accountant User Registration
     fun createAccountantUser(
         username: String,
+        pass: String,
         fullName: String,
         role: String,
         phone: String,
         email: String,
-        targetMachineCode: String
+        targetMachineCode: String,
+        pairingPin: String
     ) {
         viewModelScope.launch {
-            repository.createAccountantUser(
+            val res = repository.verifyAndRegisterAccount(
                 username = username,
+                pass = pass,
                 fullName = fullName,
                 role = role,
                 phone = phone,
                 email = email,
-                targetMachineCode = targetMachineCode
+                targetMachineCode = targetMachineCode,
+                pairingPin = pairingPin
             )
-            _uiState.update {
-                it.copy(
-                    showRegisterAccountantDialog = false,
-                    snackbarMessage = "Tạo tài khoản kế toán '$fullName' thành công! Desktop [$targetMachineCode] đã nhận diện kết nối."
-                )
+            res.onSuccess { user ->
+                val config = _syncConfig.value
+                _userSession.update {
+                    it.copy(
+                        username = user.username,
+                        isLoggedIn = true,
+                        fullName = user.fullName,
+                        role = user.role,
+                        targetMachineCode = config.targetDesktopMachineCode,
+                        androidDeviceCode = config.androidDeviceCode,
+                        token = "AC_SECURE_AUTH_TOKEN_${System.currentTimeMillis()}"
+                    )
+                }
+                _savedAuthUsername.value = user.username
+                _hasSavedAccount.value = true
+                _uiState.update {
+                    it.copy(
+                        showRegisterAccountantDialog = false,
+                        snackbarMessage = "Tạo tài khoản và ghép nối thành công! Đã lưu khóa vân tay cho những lần sau."
+                    )
+                }
+            }.onFailure { err ->
+                _uiState.update {
+                    it.copy(snackbarMessage = err.message ?: "Tạo tài khoản thất bại")
+                }
             }
         }
     }

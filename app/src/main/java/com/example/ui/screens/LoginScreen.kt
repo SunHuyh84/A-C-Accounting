@@ -75,11 +75,14 @@ fun LoginScreen(
     onOpenServerConfig: () -> Unit,
     onOpenSelectMachine: () -> Unit,
     onOpenRegisterAccount: () -> Unit,
+    savedUsername: String? = null,
+    hasSavedAccount: Boolean = false,
+    onBiometricLogin: () -> Unit = {},
     customLogoUri: String? = null,
     modifier: Modifier = Modifier
 ) {
-    var username by remember { mutableStateOf("ketoan_admin") }
-    var password by remember { mutableStateOf("AC_Secure2026@") }
+    var username by remember(savedUsername) { mutableStateOf(savedUsername ?: "") }
+    var password by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -274,14 +277,18 @@ fun LoginScreen(
                 ) {
                     OutlinedButton(
                         onClick = {
-                            onLoginSuccess("ketoan_admin", "biometric_auth")
+                            if (hasSavedAccount) {
+                                onBiometricLogin()
+                            } else {
+                                errorMessage = "Chưa có tài khoản nào được ghép nối trên thiết bị này. Vui lòng tạo tài khoản kèm mã PIN ghép nối lần đầu."
+                            }
                         },
                         modifier = Modifier.weight(1f).testTag("btn_biometric_login"),
                         shape = RoundedCornerShape(10.dp)
                     ) {
                         Icon(imageVector = Icons.Default.Fingerprint, contentDescription = null, tint = AcBrandBlue, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Vân Tay", fontSize = 12.sp)
+                        Text(if (hasSavedAccount) "Vân Tay (Đã lưu)" else "Vân Tay", fontSize = 12.sp)
                     }
 
                     OutlinedButton(

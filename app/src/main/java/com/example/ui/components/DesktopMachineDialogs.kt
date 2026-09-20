@@ -251,10 +251,12 @@ fun SelectDesktopMachineDialog(
 @Composable
 fun RegisterAccountantDialog(
     targetMachineCode: String,
-    onRegister: (username: String, fullName: String, role: String, phone: String, email: String, targetMachine: String) -> Unit,
+    onRegister: (username: String, pass: String, fullName: String, role: String, phone: String, email: String, targetMachine: String, pairingPin: String) -> Unit,
     onDismiss: () -> Unit
 ) {
     var username by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var pairingPin by remember { mutableStateOf("") }
     var fullName by remember { mutableStateOf("") }
     var role by remember { mutableStateOf("Kế toán bán hàng & công nợ") }
     var phone by remember { mutableStateOf("") }
@@ -264,10 +266,10 @@ fun RegisterAccountantDialog(
     var errorText by remember { mutableStateOf<String?>(null) }
 
     val rolesList = listOf(
-        "Kế toán trưởng (Quản trị)",
         "Kế toán bán hàng & công nợ",
         "Kế toán kho & vật tư",
         "Kế toán thanh toán & ngân quỹ",
+        "Kế toán tổng hợp",
         "Giám đốc / Kiểm toán viên"
     )
 
@@ -283,7 +285,7 @@ fun RegisterAccountantDialog(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Tạo Tài Khoản Kế Toán Mới",
+                    text = "Tạo & Ghép Nối Tài Khoản",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -295,7 +297,7 @@ fun RegisterAccountantDialog(
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 Text(
-                    text = "Tài khoản tạo trên App Android sẽ được đăng ký và đồng bộ trực tiếp lên bản A&C Desktop để quản trị viên theo dõi hoạt động.",
+                    text = "Nhập thông tin nhân sự kế toán và Mã PIN ghép nối do Quản trị viên Desktop cấp để kích hoạt quyền truy cập.",
                     fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -326,6 +328,38 @@ fun RegisterAccountantDialog(
                     shape = RoundedCornerShape(8.dp)
                 )
 
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = {
+                        password = it
+                        errorText = null
+                    },
+                    label = { Text("Mật khẩu tài khoản") },
+                    leadingIcon = { Icon(imageVector = Icons.Default.Lock, contentDescription = null) },
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp)
+                )
+
+                OutlinedTextField(
+                    value = pairingPin,
+                    onValueChange = {
+                        if (it.length <= 8) {
+                            pairingPin = it.trim()
+                            errorText = null
+                        }
+                    },
+                    label = { Text("Mã PIN ghép nối (Do Desktop cấp)") },
+                    placeholder = { Text("Ví dụ: 389210") },
+                    leadingIcon = { Icon(imageVector = Icons.Default.Key, contentDescription = null, tint = AcBrandBlue) },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(8.dp)
+                )
+
                 ExposedDropdownMenuBox(
                     expanded = expandedRole,
                     onExpandedChange = { expandedRole = !expandedRole }
@@ -334,7 +368,7 @@ fun RegisterAccountantDialog(
                         value = role,
                         onValueChange = {},
                         readOnly = true,
-                        label = { Text("Vai trò / Chức danh kế toán") },
+                        label = { Text("Vai trò kế toán") },
                         leadingIcon = { Icon(imageVector = Icons.Default.Work, contentDescription = null) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedRole) },
                         modifier = Modifier.fillMaxWidth().menuAnchor(MenuAnchorType.PrimaryNotEditable),
@@ -359,18 +393,8 @@ fun RegisterAccountantDialog(
                 OutlinedTextField(
                     value = phone,
                     onValueChange = { phone = it },
-                    label = { Text("Số điện thoại liên hệ") },
+                    label = { Text("Số điện thoại liên hệ (tùy chọn)") },
                     leadingIcon = { Icon(imageVector = Icons.Default.Phone, contentDescription = null) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(8.dp)
-                )
-
-                OutlinedTextField(
-                    value = email,
-                    onValueChange = { email = it },
-                    label = { Text("Email công việc") },
-                    leadingIcon = { Icon(imageVector = Icons.Default.Email, contentDescription = null) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp)
@@ -394,16 +418,16 @@ fun RegisterAccountantDialog(
         confirmButton = {
             Button(
                 onClick = {
-                    if (fullName.isBlank() || username.isBlank()) {
-                        errorText = "Vui lòng điền Họ tên và Tên đăng nhập"
+                    if (fullName.isBlank() || username.isBlank() || password.isBlank() || pairingPin.isBlank()) {
+                        errorText = "Vui lòng điền đầy đủ Họ tên, Tên đăng nhập, Mật khẩu và Mã PIN ghép nối"
                     } else {
-                        onRegister(username, fullName, role, phone, email, machineCode)
+                        onRegister(username, password, fullName, role, phone, email, machineCode, pairingPin)
                     }
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = AcBrandBlue),
                 shape = RoundedCornerShape(8.dp)
             ) {
-                Text("Tạo & Đăng Ký Lên Desktop")
+                Text("Xác Nhận PIN & Ghép Nối")
             }
         },
         dismissButton = {

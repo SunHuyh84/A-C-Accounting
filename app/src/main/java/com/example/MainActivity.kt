@@ -123,6 +123,8 @@ fun MainAppScreen(
     val syncConfig by viewModel.syncConfig.collectAsStateWithLifecycle()
     val syncLogs by viewModel.recentLogs.collectAsStateWithLifecycle()
     val pollingState by viewModel.pollingState.collectAsStateWithLifecycle()
+    val savedUsername by viewModel.savedAuthUsername.collectAsStateWithLifecycle()
+    val hasSavedAccount by viewModel.hasSavedAccount.collectAsStateWithLifecycle()
 
     val snackbarHostState = remember { SnackbarHostState() }
     var showLogoutDialog by remember { mutableStateOf(false) }
@@ -150,6 +152,11 @@ fun MainAppScreen(
             onOpenRegisterAccount = {
                 viewModel.showRegisterAccountantDialog(true)
             },
+            savedUsername = savedUsername,
+            hasSavedAccount = hasSavedAccount,
+            onBiometricLogin = {
+                viewModel.loginWithBiometrics()
+            },
             customLogoUri = uiState.customLogoUri
         )
 
@@ -171,8 +178,8 @@ fun MainAppScreen(
         if (uiState.showRegisterAccountantDialog) {
             RegisterAccountantDialog(
                 targetMachineCode = syncConfig.targetDesktopMachineCode,
-                onRegister = { u, f, r, p, e, m ->
-                    viewModel.createAccountantUser(u, f, r, p, e, m)
+                onRegister = { u, pass, f, r, p, e, m, pin ->
+                    viewModel.createAccountantUser(u, pass, f, r, p, e, m, pin)
                 },
                 onDismiss = { viewModel.showRegisterAccountantDialog(false) }
             )
@@ -494,8 +501,8 @@ fun MainAppScreen(
     if (uiState.showRegisterAccountantDialog) {
         RegisterAccountantDialog(
             targetMachineCode = syncConfig.targetDesktopMachineCode,
-            onRegister = { u, f, r, p, e, m ->
-                viewModel.createAccountantUser(u, f, r, p, e, m)
+            onRegister = { u, pass, f, r, p, e, m, pin ->
+                viewModel.createAccountantUser(u, pass, f, r, p, e, m, pin)
             },
             onDismiss = { viewModel.showRegisterAccountantDialog(false) }
         )
