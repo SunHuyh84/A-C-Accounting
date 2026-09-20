@@ -1,0 +1,6 @@
+{
+  "name": "A&C Accounting",
+  "description": "Ứng dụng kế toán di động A&C Mobile đồng bộ dữ liệu thời gian thực và truy cập từ xa với phần mềm A&C Accounting desktop qua API trung gian bảo mật.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
