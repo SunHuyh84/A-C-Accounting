@@ -79,12 +79,12 @@ data class AccountBalance(
 )
 
 data class SyncConfig(
-    val serverUrl: String = "https://bridge.ac-accounting.local:8443",
-    val apiKey: String = "AC_SECURE_TOKEN_2025_XYZ",
-    val companyCode: String = "AC_ENTERPRISE_DB",
-    val targetDesktopMachineCode: String = "AC-DESKTOP-892A", // Mã máy Desktop người dùng muốn kết nối
+    val serverUrl: String = "http://192.168.1.130:8765",
+    val apiKey: String = "E583A305E2701A9B2E10300C",
+    val companyCode: String = "PANAP",
+    val targetDesktopMachineCode: String = "AC-DESKTOP-D0C0", // Mã máy Desktop người dùng muốn kết nối
     val androidDeviceCode: String = "ANDR-MOB-7734", // Mã định danh duy nhất máy Android
-    val connectedDesktopName: String = "PC-KETOAN-TONGHOP (A&C Accounting)",
+    val connectedDesktopName: String = "Trạm Kế Toán A&C (AC-DESKTOP-D0C0)",
     val autoSync: Boolean = true,
     val syncIntervalSeconds: Int = 10,
     val lastSyncTimestamp: Long = 0L,

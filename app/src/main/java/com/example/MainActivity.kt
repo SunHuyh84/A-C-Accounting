@@ -1,7 +1,7 @@
 package com.example
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
+import androidx.fragment.app.FragmentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
@@ -93,22 +93,76 @@ import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.viewmodel.AccountingViewModel
 import com.example.ui.viewmodel.AppTab
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
             MyApplicationTheme {
-                MainAppScreen()
+                MainAppScreen(
+                    onTriggerBiometric = { onSuccess, onError ->
+                        showBiometricPrompt(onSuccess, onError)
+                    }
+                )
             }
         }
+    }
+
+    private fun showBiometricPrompt(
+        onSuccess: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        val biometricManager = androidx.biometric.BiometricManager.from(this)
+        val canAuthenticate = biometricManager.canAuthenticate(
+            androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_STRONG or
+            androidx.biometric.BiometricManager.Authenticators.BIOMETRIC_WEAK or
+            androidx.biometric.BiometricManager.Authenticators.DEVICE_CREDENTIAL
+        )
+        if (canAuthenticate != androidx.biometric.BiometricManager.BIOMETRIC_SUCCESS) {
+            onError("Thiết bị chưa thiết lập khóa vân tay hoặc không hỗ trợ sinh trắc học.")
+            return
+        }
+
+        val executor = androidx.core.content.ContextCompat.getMainExecutor(this)
+        val prompt = androidx.biometric.BiometricPrompt(
+            this,
+            executor,
+            object : androidx.biometric.BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(result: androidx.biometric.BiometricPrompt.AuthenticationResult) {
+                    super.onAuthenticationSucceeded(result)
+                    onSuccess()
+                }
+
+                override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                    super.onAuthenticationError(errorCode, errString)
+                    if (errorCode != androidx.biometric.BiometricPrompt.ERROR_USER_CANCELED &&
+                        errorCode != androidx.biometric.BiometricPrompt.ERROR_NEGATIVE_BUTTON) {
+                        onError(errString.toString())
+                    }
+                }
+
+                override fun onAuthenticationFailed() {
+                    super.onAuthenticationFailed()
+                    onError("Vân tay không chính xác. Vui lòng chạm lại.")
+                }
+            }
+        )
+
+        val promptInfo = androidx.biometric.BiometricPrompt.PromptInfo.Builder()
+            .setTitle("Đăng nhập A&C Accounting")
+            .setSubtitle("Xác thực vân tay để truy cập hệ thống kế toán")
+            .setNegativeButtonText("Sử dụng mật khẩu")
+            .build()
+
+        prompt.authenticate(promptInfo)
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainAppScreen(
-    viewModel: AccountingViewModel = viewModel()
+    viewModel: AccountingViewModel = viewModel(),
+    onTriggerBiometric: (onSuccess: () -> Unit, onError: (String) -> Unit) -> Unit = { _, _ -> }
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val userSession by viewModel.userSession.collectAsStateWithLifecycle()
@@ -155,8 +209,13 @@ fun MainAppScreen(
             savedUsername = savedUsername,
             hasSavedAccount = hasSavedAccount,
             onBiometricLogin = {
-                viewModel.loginWithBiometrics()
+                onTriggerBiometric(
+                    { viewModel.loginWithBiometrics() },
+                    { err -> viewModel.setSnackbarMessage(err) }
+                )
             },
+            isLoading = uiState.isLoading,
+            loginErrorMessage = uiState.snackbarMessage,
             customLogoUri = uiState.customLogoUri
         )
 
@@ -596,8 +655,37 @@ fun QuickServerConfigDialog(
                 OutlinedTextField(
                     value = serverUrl,
                     onValueChange = { serverUrl = it },
-                    label = { Text("Địa chỉ API Gateway máy chủ") },
+                    label = { Text("Địa chỉ kết nối máy chủ (Cổng 8765)") },
+                    placeholder = { Text("http://192.168.1.130:8765") },
                     modifier = Modifier.fillMaxWidth()
+                )
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    listOf("http://192.168.1.130:8765", "http://192.168.1.129:8765", "http://192.168.1.8:8765").forEach { ipSuggestion ->
+                        Surface(
+                            shape = RoundedCornerShape(6.dp),
+                            color = if (serverUrl == ipSuggestion) AcBrandBlue else MaterialTheme.colorScheme.surfaceVariant,
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable { serverUrl = ipSuggestion }
+                        ) {
+                            Text(
+                                text = ipSuggestion.substringAfter("http://").substringBefore(":8765"),
+                                fontSize = 11.sp,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                modifier = Modifier.padding(vertical = 4.dp),
+                                color = if (serverUrl == ipSuggestion) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+                Text(
+                    text = "💡 Nhập đúng địa chỉ hiển thị trên Desktop: http://<IP>:8765 (không nhập https và không dùng cổng 8443)",
+                    fontSize = 11.sp,
+                    color = AcAmberWarning
                 )
                 OutlinedTextField(
                     value = desktopPath,

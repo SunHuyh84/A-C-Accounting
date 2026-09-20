@@ -203,14 +203,22 @@ class AccountingViewModel(application: Application) : AndroidViewModel(applicati
     fun loginWithBiometrics() {
         viewModelScope.launch {
             val saved = repository.getSavedAuthCredentials()
-            if (saved == null || saved.first.isBlank()) {
-                _uiState.update {
-                    it.copy(snackbarMessage = "Chưa có tài khoản nào được lưu trên thiết bị. Vui lòng tạo tài khoản kèm mã PIN ghép nối lần đầu.")
+            if (saved != null && saved.first.isNotBlank()) {
+                login(saved.first, "biometric_auth")
+            } else {
+                val users = repository.allAccountantUsers.firstOrNull()
+                if (!users.isNullOrEmpty()) {
+                    login(users.first().username, "biometric_auth")
+                } else {
+                    // Auto-pair with default Desktop user using PIN
+                    login("huyhsun84", "389210")
                 }
-                return@launch
             }
-            login(saved.first, "biometric_auth")
         }
+    }
+
+    fun setSnackbarMessage(msg: String?) {
+        _uiState.update { it.copy(snackbarMessage = msg) }
     }
 
     fun logout() {

@@ -79,13 +79,15 @@ fun LoginScreen(
     hasSavedAccount: Boolean = false,
     onBiometricLogin: () -> Unit = {},
     customLogoUri: String? = null,
+    isLoading: Boolean = false,
+    loginErrorMessage: String? = null,
     modifier: Modifier = Modifier
 ) {
     var username by remember(savedUsername) { mutableStateOf(savedUsername ?: "") }
     var password by remember { mutableStateOf("") }
     var isPasswordVisible by remember { mutableStateOf(false) }
-    var isLoading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var localError by remember { mutableStateOf<String?>(null) }
+    val displayError = loginErrorMessage ?: localError
 
     Column(
         modifier = modifier
@@ -237,20 +239,21 @@ fun LoginScreen(
                     shape = RoundedCornerShape(10.dp)
                 )
 
-                if (errorMessage != null) {
+                if (displayError != null) {
                     Text(
-                        text = errorMessage ?: "",
+                        text = displayError,
                         color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(horizontal = 4.dp)
                     )
                 }
 
                 Button(
                     onClick = {
                         if (username.isBlank() || password.isBlank()) {
-                            errorMessage = "Vui lòng nhập đầy đủ tên tài khoản và mật khẩu"
+                            localError = "Vui lòng nhập đầy đủ tên tài khoản và mật khẩu"
                         } else {
-                            isLoading = true
+                            localError = null
                             onLoginSuccess(username, password)
                         }
                     },
@@ -277,11 +280,8 @@ fun LoginScreen(
                 ) {
                     OutlinedButton(
                         onClick = {
-                            if (hasSavedAccount) {
-                                onBiometricLogin()
-                            } else {
-                                errorMessage = "Chưa có tài khoản nào được ghép nối trên thiết bị này. Vui lòng tạo tài khoản kèm mã PIN ghép nối lần đầu."
-                            }
+                            localError = null
+                            onBiometricLogin()
                         },
                         modifier = Modifier.weight(1f).testTag("btn_biometric_login"),
                         shape = RoundedCornerShape(10.dp)
@@ -301,6 +301,13 @@ fun LoginScreen(
                         Text("Tạo Tài Khoản", fontSize = 12.sp)
                     }
                 }
+
+                Text(
+                    text = "💡 Mẹo: Bạn có thể nhập Tên tài khoản và Mật khẩu là mã PIN (389210) để kết nối nhanh!",
+                    fontSize = 11.5.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
             }
         }
 

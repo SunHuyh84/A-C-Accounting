@@ -54,14 +54,15 @@ jobs:
         if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.1
-          name: "A&C Accounting Mobile v1.0.1"
+          tag_name: v1.0.2
+          name: "A&C Accounting Mobile v1.0.2"
           body: |
-            ## 📱 A&C Accounting Mobile v1.0.1 (Official Build)
-            - **Bảo mật đăng nhập lần đầu:** Người dùng bắt buộc ở màn hình đăng nhập, không tự động đăng nhập tài khoản quản trị.
-            - **Mã PIN ghép nối bảo mật:** Yêu cầu nhập đúng mã PIN ghép nối 6 số do Quản trị viên trạm Desktop cấp mới có thể tạo/kích hoạt tài khoản.
-            - **Đăng nhập nhanh:** Tự động lưu tài khoản sau khi ghép nối thành công để những lần sau chỉ cần dùng Vân tay hoặc Mật khẩu đã lưu.
-            - **Phân quyền an toàn:** Gán đúng vai trò kế toán viên, hạn chế rủi ro quyền quản trị.
+            ## 📱 A&C Accounting Mobile v1.0.2 (Official Build)
+            - **Cảm biến vân tay phần cứng (BiometricPrompt):** Tích hợp xác thực sinh trắc học Android chính thức.
+            - **Tự động nhận diện trạm Desktop:** Cấu hình mặc định đúng cổng 8765 và hỗ trợ chọn nhanh IP Wi-Fi nội bộ.
+            - **Đăng nhập bằng mã PIN máy trạm (389210):** Cho phép nhập mã PIN máy trạm làm mật khẩu để kết nối ngay lập tức.
+            - **Đồng bộ tài khoản Desktop:** Tự động nhận diện tài khoản đã được cấp trên máy tính và phân quyền MISA.
+            - **Xử lý trạng thái đăng nhập mượt mà:** Khắc phục lỗi kẹt nút đăng nhập khi sai thông số mạng.
           files: build-output/AC_Accounting_Mobile.apk
           draft: false
           prerelease: false
