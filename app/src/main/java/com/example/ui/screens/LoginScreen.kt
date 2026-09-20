@@ -203,7 +203,7 @@ fun LoginScreen(
                     value = username,
                     onValueChange = {
                         username = it
-                        errorMessage = null
+                        localError = null
                     },
                     label = { Text("Tên tài khoản kế toán") },
                     leadingIcon = {
@@ -218,7 +218,7 @@ fun LoginScreen(
                     value = password,
                     onValueChange = {
                         password = it
-                        errorMessage = null
+                        localError = null
                     },
                     label = { Text("Mật khẩu") },
                     leadingIcon = {
