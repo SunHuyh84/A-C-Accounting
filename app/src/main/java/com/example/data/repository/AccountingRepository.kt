@@ -726,6 +726,8 @@ class AccountingRepository(private val db: AppDatabase) {
                 username = "ketoan_admin",
                 fullName = "Quản trị viên Kế toán",
                 role = "Kế toán trưởng (Quản trị)",
+                phone = "0901234567",
+                email = "ketoan@ketoan-ac.vn",
                 targetMachineCode = loadSyncConfig().targetDesktopMachineCode,
                 androidDeviceCode = loadSyncConfig().androidDeviceCode,
                 isApprovedOnDesktop = true,

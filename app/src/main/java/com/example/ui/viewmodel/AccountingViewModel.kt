@@ -45,6 +45,7 @@ enum class AppTab(val title: String) {
 
 data class UiState(
     val currentTab: AppTab = AppTab.DASHBOARD,
+    val isLoading: Boolean = false,
     val isSyncing: Boolean = false,
     val isTestingConnection: Boolean = false,
     val connectionTestResult: Pair<Boolean, String>? = null,
